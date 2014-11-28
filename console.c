@@ -13,6 +13,9 @@
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
+//#include "user.h"
+
+#define NULL 0x0
 
 static void consputc(int);
 
@@ -141,8 +144,8 @@ cgaputc(int c)
     pos += 80 - pos%80;
   else if(c == BACKSPACE){
     if(pos > 0) --pos;
-  } else
-    crt[pos++] = (c&0xff) | 0x0700;  // black on white
+  } //else if(c == '\t') crt[pos++] = ('l'&0xff) | 0x700;
+         else crt[pos++] = (c&0xff) | 0x0700;  // black on white
   
   if((pos/80) >= 24){  // Scroll up.
     memmove(crt, crt+80, sizeof(crt[0])*23*80);
@@ -184,16 +187,64 @@ struct {
 
 #define C(x)  ((x)-'@')  // Control-x
 
+char* match_commend(char* commendPrefix) {
+    //consputc(strlen(commendPrefix)+'0');
+    int i = 0;
+    char* commendList[3];
+    char **p = commendList;
+    int flag = 0;
+    char* ans = NULL;
+    commendList[0] = "ls\0";
+    commendList[1] = "cd\0";
+    commendList[2] = NULL;
+    while (*p != NULL) {
+        i = 0;
+        if (strlen(*p) < strlen(commendPrefix)) {continue;}
+        while (i < strlen(commendPrefix)) if ((*p)[i] == commendPrefix[i]) i++; else break;
+        if (i >= strlen(commendPrefix)) {if (flag == 1) flag = 0; else {ans = *p; flag = 1;} }
+        p++;
+    }
+    if (flag == 1) return ans; else return NULL;	
+}
+
 void
 consoleintr(int (*getc)(void))
 {
   int c;
+  int i;
 
   acquire(&input.lock);
   while((c = getc()) >= 0){
     switch(c){
     case C('P'):  // Process listing.
       procdump();
+      break;
+    case '\t':
+      //i = input.e;
+      //input.buf[input.e++] = 'd';
+      //consputc('d');
+      /*while (i > input.w) {
+          input.buf[input.e++ % INPUT_BUF] = input.buf[i-1];
+          consputc(input.buf[i-1]);
+          i--;
+      } */
+      if (input.e != input.w) {
+          i = input.e - 1;
+          while (input.buf[i % INPUT_BUF] != ' ' && i != input.w) i--;
+          char commendPrefix[INPUT_BUF];
+          int len = 0;
+          while (i != input.e) commendPrefix[len++] = input.buf[i++ % INPUT_BUF];
+          commendPrefix[len++] = '\0';
+          char* match_ans;
+          match_ans = match_commend(commendPrefix);
+          if (match_ans != NULL) {
+              i = len - 1;
+              while (match_ans[i] != '\0') {
+                  input.buf[input.e++ % INPUT_BUF] = match_ans[i];
+                  consputc(match_ans[i++]);
+              }
+          } 
+      }
       break;
     case C('U'):  // Kill line.
       while(input.e != input.w &&
