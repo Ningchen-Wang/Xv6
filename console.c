@@ -15,6 +15,46 @@
 #include "x86.h"
 //#include "user.h"
 
+//Test for history recording
+#define MAX_HISTORY 3
+#define MAX_CMD 100
+static int flag = 0;
+static int g = 0;
+struct history
+{
+	char cmds[MAX_HISTORY][MAX_CMD];
+	int current;
+    int record;
+};
+struct history his = {.current = 0, .record = 0};
+
+int recordHistory(char* cmd)
+{
+
+	int i;
+       
+	for(i = 0; i < (sizeof(cmd) / sizeof(char)); i++)
+	{
+		his.cmds[his.current][i] = cmd[i];
+	}
+	 his.current++;
+        	if(his.current >= MAX_HISTORY)
+	{
+		his.current = 0;
+	}
+    his.record = 1;
+	return 0;
+}
+
+char* fetchHistory()
+{
+	return his.cmds[his.current];
+}
+
+int len;
+char str[MAX_CMD];
+//Test for history recording
+
 #define NULL 0x0
 
 static void consputc(int);
@@ -217,9 +257,11 @@ consoleintr(int (*getc)(void))
   while((c = getc()) >= 0){
     switch(c){
     case C('P'):  // Process listing.
+      flag = 0;//history flag
       procdump();
       break;
     case '\t':
+      flag = 0;//history flag
       //i = input.e;
       //input.buf[input.e++] = 'd';
       //consputc('d');
@@ -247,6 +289,7 @@ consoleintr(int (*getc)(void))
       }
       break;
     case C('U'):  // Kill line.
+      flag = 0;//history flag
       while(input.e != input.w &&
             input.buf[(input.e-1) % INPUT_BUF] != '\n'){
         input.e--;
@@ -257,8 +300,98 @@ consoleintr(int (*getc)(void))
       if(input.e != input.w){
         input.e--;
         consputc(BACKSPACE);
+        if(len > 0) len--;
       }
       break;
+    //case 0xE2: Test for up key
+		case 0xE2:
+	
+            if(flag == 0)
+            {
+                g = his.current - 1;
+                if (g < 0)
+                   g = MAX_HISTORY-1;
+                flag = 1;
+
+            }
+            else
+            {
+                
+                if ( g  == his.current )
+                   continue;
+                g--;
+                if (g < 0)
+                   g = MAX_HISTORY-1;
+
+                
+            }
+			if(his.record == 1)
+			{
+                while(input.e != input.w &&
+                input.buf[(input.e-1) % INPUT_BUF] != '\n'){
+                    input.e--;
+                    consputc(BACKSPACE);
+                }
+
+                len = 0;
+				int i;
+                int f = g;
+
+				for(i = 0; i < (sizeof(his.cmds[f]) / sizeof(char)); i++)
+				{
+                    if(his.cmds[f][i] == '\0') break;
+					input.buf[input.e++ % INPUT_BUF] = his.cmds[f][i];
+					consputc(his.cmds[f][i]);
+                    str[len++] = his.cmds[f][i];
+				}
+
+			}
+	  break;
+    //case 0xE3: Test for down key
+    case 0xE3:
+			
+            if(flag == 0)
+            {
+               continue;
+
+            }
+            else
+            {
+                int now;
+                now = his.current - 1;
+                if (now < 0)
+                   now = MAX_HISTORY-1; 
+                if ( g  == now )
+                   continue;
+                g++;
+                if (g >= MAX_HISTORY)
+                   g = 0;
+
+                
+            }
+			if(his.record == 1)
+			{
+                while(input.e != input.w &&
+                input.buf[(input.e-1) % INPUT_BUF] != '\n'){
+                    input.e--;
+                    consputc(BACKSPACE);
+                }
+
+                len = 0;
+				int i;
+                int f = g;
+
+				for(i = 0; i < (sizeof(his.cmds[f]) / sizeof(char)); i++)
+				{
+                    if(his.cmds[f][i] == '\0') break;
+					input.buf[input.e++ % INPUT_BUF] = his.cmds[f][i];
+					consputc(his.cmds[f][i]);
+                    str[len++] = his.cmds[f][i];
+				}
+
+			}
+	  break; 
+    /*
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
@@ -269,6 +402,24 @@ consoleintr(int (*getc)(void))
           wakeup(&input.r);
         }
       }
+      break;
+    */
+    default:
+      if(c != 0 && input.e-input.r < INPUT_BUF){
+        c = (c == '\r') ? '\n' : c;
+        input.buf[input.e++ % INPUT_BUF] = c;
+        str[len++]=c;//Preparation for building a history record
+        consputc(c);
+        if(c == '\n' || c == C('D') || input.e == input.r+INPUT_BUF){
+          flag = 0;
+          input.w = input.e;
+          str[len - 1] = '\0';//Add a '\0' in the end
+          recordHistory(str);
+          len=0;//reset len for the next recording preparation
+          wakeup(&input.r);
+        }
+      }
+	
       break;
     }
   }
