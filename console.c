@@ -199,7 +199,7 @@ char* match_commend(char* commendPrefix) {
     commendList[2] = NULL;
     while (*p != NULL) {
         i = 0;
-        if (strlen(*p) < strlen(commendPrefix)) {continue;}
+        if (strlen(*p) < strlen(commendPrefix)) {p++; continue;}
         while (i < strlen(commendPrefix)) if ((*p)[i] == commendPrefix[i]) i++; else break;
         if (i >= strlen(commendPrefix)) {if (flag == 1) flag = 0; else {ans = *p; flag = 1;} }
         p++;
