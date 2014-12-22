@@ -54,7 +54,7 @@ char* fetchHistory()
 
 int len;
 char str[MAX_CMD];
-//Test for history recording
+//End
 
 #define NULL 0x0
 
@@ -170,6 +170,27 @@ panic(char *s)
 #define CRTPORT 0x3d4
 static ushort *crt = (ushort*)P2V(0xb8000);  // CGA memory
 
+//Test for left and right arrow
+char buffer[MAX_CMD];
+int bufferPos = 0;
+
+int concatInput()
+{
+    int i = bufferPos;
+    int pos;
+    outb(CRTPORT, 14);
+    pos = inb(CRTPORT+1) << 8;
+    outb(CRTPORT, 15);
+    pos |= inb(CRTPORT+1);
+    for(i = bufferPos - 1; i >= 0; i--)
+    {
+        crt[pos++] = (buffer[i] & 0xff) | 0x0700;
+    }
+    //printint(pos, 10, 1);
+    return 0;
+}
+//
+
 static void
 cgaputc(int c)
 {
@@ -186,6 +207,14 @@ cgaputc(int c)
   else if(c == BACKSPACE){
     if(pos > 0) --pos;
   } //else if(c == '\t') crt[pos++] = ('l'&0xff) | 0x700;
+  //Test
+  else if(c == 0xe4){
+    if(pos > 0){
+        --pos;
+        buffer[bufferPos++] = crt[pos];
+    }
+  }
+  //
          else crt[pos++] = (c&0xff) | 0x0700;  // black on white
   
   if((pos/80) >= 24){  // Scroll up.
@@ -198,7 +227,7 @@ cgaputc(int c)
   outb(CRTPORT+1, pos>>8);
   outb(CRTPORT, 15);
   outb(CRTPORT+1, pos);
-  crt[pos] = ' ' | 0x0700;
+  if(c != 0xe4) crt[pos] = ' ' | 0x0700;
 }
 
 void
@@ -356,7 +385,7 @@ consoleintr(int (*getc)(void))
                    now = his.recordNum-1; 
                 if (his.pos  == now)
                    continue;
-                if (his.recordNum < MAX_HISTORY && his.pos == his.recordNum-1)
+                if (his.recordNum < MAX_HISTORY && his.pos == his.recordNum - 1)
                    continue;
                 his.pos++;
                 if (his.pos >= his.recordNum)
@@ -382,6 +411,16 @@ consoleintr(int (*getc)(void))
 				}
 			}
 	  break; 
+  //Test
+	case 0xE4:
+	    if(input.e != input.w){
+        input.e--;
+        //consputc(BACKSPACE);
+        consputc(0xe4);
+        if(len > 0) len--;
+      }
+      break;
+  //
     /*
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
@@ -398,6 +437,15 @@ consoleintr(int (*getc)(void))
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
+        if(c == '\n'){
+            int i;
+      		for(i = bufferPos - 1; i >= 0; i--)
+		    {
+			    input.buf[input.e++ % INPUT_BUF] = buffer[i];
+			    str[len++] = buffer[i];
+		    }
+		    bufferPos = 0;
+		}    
         input.buf[input.e++ % INPUT_BUF] = c;
         str[len++] = c;//Preparation for building a history record
         consputc(c);
@@ -408,6 +456,9 @@ consoleintr(int (*getc)(void))
           recordHistory(str);
           len = 0;//reset len for the next recording preparation
           wakeup(&input.r);
+        }
+        else{
+            concatInput();
         }
       }
 	
