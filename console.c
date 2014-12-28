@@ -187,6 +187,7 @@ int concatInput()
         crt[pos++] = (buffer[i] & 0xff) | 0x0700;
     }
     //printint(pos, 10, 1);
+    crt[pos] = ' ' | 0x0700;
     return 0;
 }
 //
@@ -288,9 +289,11 @@ consoleintr(int (*getc)(void))
     switch(c){
     case C('P'):  // Process listing.
       his.flag = 0;//history flag
+      bufferPos = 0;
       procdump();
       break;
     case '\t':
+      bufferPos = 0;
       his.flag = 0;//history flag
       if (input.e != input.w) {
           i = input.e - 1;
@@ -313,6 +316,7 @@ consoleintr(int (*getc)(void))
       break;
     case C('U'):  // Kill line.
       his.flag = 0;//history flag
+      bufferPos = 0;
       while(input.e != input.w &&
             input.buf[(input.e-1) % INPUT_BUF] != '\n'){
         input.e--;
@@ -324,6 +328,7 @@ consoleintr(int (*getc)(void))
         input.e--;
         consputc(BACKSPACE);
         if(len > 0) len--;
+	concatInput();
       }
       break;
     //case 0xE2: Test for up key
@@ -348,6 +353,7 @@ consoleintr(int (*getc)(void))
                his.pos = his.recordNum-1;
 
         }
+	bufferPos = 0;
 	    if(his.record == 1)
 	    {
             while(input.e != input.w &&
@@ -391,6 +397,7 @@ consoleintr(int (*getc)(void))
                 if (his.pos >= his.recordNum)
                    his.pos = 0; 
             }
+	    bufferPos = 0;
 			if(his.record == 1)
 			{
                 while(input.e != input.w &&
@@ -434,6 +441,17 @@ consoleintr(int (*getc)(void))
       }
       break;
     */
+    case 0xE5:
+	if (bufferPos > 0)
+	{
+		bufferPos --;
+	    	input.buf[input.e++ % INPUT_BUF] = buffer[bufferPos];
+		str[len++] = buffer[bufferPos];//Preparation for building a history record
+		consputc(buffer[bufferPos]);
+		concatInput();
+	}
+	break;
+
     default:
       if(c != 0 && input.e-input.r < INPUT_BUF){
         c = (c == '\r') ? '\n' : c;
