@@ -128,12 +128,15 @@ sys_link(void)
   }
 
   ilock(ip);
+/*
+  //comment this out so we can rename a directory!
+  
   if(ip->type == T_DIR){
     iunlockput(ip);
     end_op();
     return -1;
   }
-
+*/
   ip->nlink++;
   iupdate(ip);
   iunlock(ip);
@@ -160,7 +163,7 @@ bad:
   end_op();
   return -1;
 }
-
+/*
 // Is the directory dp empty except for "." and ".." ?
 static int
 isdirempty(struct inode *dp)
@@ -176,7 +179,7 @@ isdirempty(struct inode *dp)
   }
   return 1;
 }
-
+*/
 //PAGEBREAK!
 int
 sys_unlink(void)
@@ -207,10 +210,12 @@ sys_unlink(void)
 
   if(ip->nlink < 1)
     panic("unlink: nlink < 1");
+/*
   if(ip->type == T_DIR && !isdirempty(ip)){
     iunlockput(ip);
     goto bad;
   }
+*/
 
   memset(&de, 0, sizeof(de));
   if(writei(dp, (char*)&de, off, sizeof(de)) != sizeof(de))
