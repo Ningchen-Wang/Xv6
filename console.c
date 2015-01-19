@@ -489,7 +489,7 @@ consoleintr(int (*getc)(void))
         if(len > 0) len--;
       }
       break;
-    
+    /*
     case 0xE5:
       if (bufferPos > 0)
       {
@@ -503,6 +503,7 @@ consoleintr(int (*getc)(void))
        
 	
       break;
+    */
   //
     /*
     default:
