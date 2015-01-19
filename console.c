@@ -390,7 +390,7 @@ consoleintr(int (*getc)(void))
         input.e--;
         consputc(BACKSPACE);
         if(len > 0) len--;
-	concatInput();
+        concatInput();
       }
       break;
     //case 0xE2: Test for up key
@@ -488,6 +488,20 @@ consoleintr(int (*getc)(void))
         consputc(0xe4);
         if(len > 0) len--;
       }
+      break;
+    
+    case 0xE5:
+      if (bufferPos > 0)
+      {
+          input.buf[input.e++ % INPUT_BUF] = buffer[bufferPos-1];
+          str[len++] = buffer[bufferPos-1];//Preparation for building a history record
+          consputc(buffer[bufferPos-1]);
+          bufferPos --;
+          concatInput();
+      }
+ 
+       
+	
       break;
   //
     /*
