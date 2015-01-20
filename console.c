@@ -23,6 +23,8 @@ char cmdlist[100][100];
 int tab_times = 0;
 int match_length = 0;
 
+extern char pathroute[100];
+
 
 struct history
 {
@@ -273,14 +275,13 @@ int getCommondList() {
     file_path[0] = '/';
     while (1) {
        readi(ip, (char*)&de, sizeof(de)*i, sizeof(de));
-       //cprintf("%d %d\n", temp, de.inum);
        if(de.inum == 0)
            break;
-       
        memmove(file_path + 1, de.name, DIRSIZ);
        file_path[1 + DIRSIZ] = 0;
        struct inode *singlefile = namei(file_path);
-       if(singlefile -> type == 0) {
+       //cprintf("%d %d %d\n", temp, de.inum, singlefile -> type);
+       if(singlefile -> type == 0 || singlefile -> type == 2) {
            strncpy(cmdlist[j], de.name, DIRSIZ);
            //cprintf("%s \n", cmdlist[j]);
            j++;
@@ -288,7 +289,8 @@ int getCommondList() {
        //cprintf("%d ", singlefile -> type);
        //cprintf("%s \n", file_path);
        i++;
-    }    
+    }
+    //ip = proc->cwd;    
     //int x = ip->type;
     //cprintf("%d %s", x, de.name);
     return j;
@@ -302,7 +304,7 @@ char* match_commond(char* commondPrefix) {
     num = getCommondList();
     int flag = 0;
     char* firstmatch = NULL;
-	//cprintf("%d\n", num);
+	//cprintf("%s\n", commondPrefix);
     while (j != num) {
         i = 0; 
 		//cprintf("%d %s\n", j, cmdlist[j]);
@@ -316,6 +318,7 @@ char* match_commond(char* commondPrefix) {
         j++;
         //num--;
     }
+    //cprintf("%d %d %d\n", flag, tab_times, num);
     if (flag < tab_times) {tab_times = 1;  return firstmatch;}	else return NULL;
 }
 

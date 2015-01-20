@@ -13,6 +13,8 @@
 
 #define MAXARGS 10
 
+char pathroute[100] = "/";
+
 struct cmd {
   int type;
 };
@@ -76,7 +78,8 @@ runcmd(struct cmd *cmd)
     if(ecmd->argv[0] == 0)
       exit();
     exec(ecmd->argv[0], ecmd->argv);
-    printf(2, "exec %s failed\n", ecmd->argv[0]);
+    if(ecmd->argv[0][0] == '/')
+      printf(2, "exec %s failed\n", ecmd->argv[0]+1);
     break;
 
   case REDIR:
@@ -127,7 +130,8 @@ runcmd(struct cmd *cmd)
       runcmd(bcmd->cmd);
     break;
   }
-  exit();
+  //exit();
+  return;
 }
 
 int
@@ -145,6 +149,7 @@ int
 main(void)
 {
   static char buf[100];
+  static char bufCNM[100];
   int fd;
   
   // Assumes three file descriptors open.
@@ -165,8 +170,19 @@ main(void)
         printf(2, "cannot cd %s\n", buf+3);
       continue;
     }
-    if(fork1() == 0)
+    if(fork1() == 0) {
+      int i;
+      int len = strlen(buf);
+      for(i = len + 1; i > 0; i--) {
+        bufCNM[i] = buf[i-1];        
+      }   
+      bufCNM[0] = '/';
       runcmd(parsecmd(buf));
+      if(buf[0] != '/') {
+        runcmd(parsecmd(bufCNM));
+      }
+      exit();
+    }
     wait();
   }
   exit();
