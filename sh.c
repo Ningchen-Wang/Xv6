@@ -13,8 +13,6 @@
 
 #define MAXARGS 10
 
-char pathroute[100] = "/";
-
 struct cmd {
   int type;
 };
@@ -56,6 +54,7 @@ void panic(char*);
 struct cmd *parsecmd(char*);
 
 // Execute cmd.  Never returns.
+// Now runcmd will return and the process will exit in main(), let main can call runcmd 2 times when runcmd failed at first call.
 void
 runcmd(struct cmd *cmd)
 {
