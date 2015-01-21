@@ -7,10 +7,10 @@
 #include "x86.h"
 #include "elf.h"
 #include "execvim.h"
-
 #define MAX_CONTENT_LEN  2000
 int execvim;
 char content[MAX_CONTENT_LEN];
+
 
 int
 exec(char *path, char **argv)
@@ -18,9 +18,15 @@ exec(char *path, char **argv)
   execvim = 0;
   if (path[0] == 'v' && path[1] == 'i' && path[2] == 'm' && path[3] == 0)
   {
-    if (argv[1] && argv[2] && !argv[3])
+    if (argv[1] && argv[2] && argv[3] && !argv[4])
     {
        execvim = 1;
+       
+       int j;
+       for (j=0; argv[3][j]!='\0'; j++)
+	 content[j] = argv[3][j];
+       content[j] = '\0';
+	outb(0x64, ' ');
        while (execvim);
        argv[3] = content;
     }
