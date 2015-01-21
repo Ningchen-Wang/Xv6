@@ -14,19 +14,12 @@
 #include "proc.h"
 #include "x86.h"
 #include "execvim.h"
+
 //#include "user.h"
 
 //Test for history recording
 #define MAX_HISTORY 3
 #define MAX_CMD 100
-
-char cmdlist[100][100];
-int tab_times = 0;
-int match_length = 0;
-
-extern char pathroute[100];
-
-
 struct history
 {
 	char cmds[MAX_HISTORY][MAX_CMD];
@@ -267,60 +260,24 @@ struct {
 
 #define C(x)  ((x)-'@')  // Control-x
 
-int getCommondList() {
-    struct inode *ip = namei("/");
-    struct dirent de;
+char* match_commend(char* commendPrefix) {
+    //consputc(strlen(commendPrefix)+'0');
     int i = 0;
-    int j = 0;
-    char file_path[100];
-    file_path[0] = '/';
-    while (1) {
-       readi(ip, (char*)&de, sizeof(de)*i, sizeof(de));
-       if(de.inum == 0)
-           break;
-       memmove(file_path + 1, de.name, DIRSIZ);
-       file_path[1 + DIRSIZ] = 0;
-       struct inode *singlefile = namei(file_path);
-       //cprintf("%d %d %d\n", temp, de.inum, singlefile -> type);
-       if(singlefile -> type == 0 || singlefile -> type == 2) {
-           strncpy(cmdlist[j], de.name, DIRSIZ);
-           //cprintf("%s \n", cmdlist[j]);
-           j++;
-       } 
-       //cprintf("%d ", singlefile -> type);
-       //cprintf("%s \n", file_path);
-       i++;
-    }
-    //ip = proc->cwd;    
-    //int x = ip->type;
-    //cprintf("%d %s", x, de.name);
-    return j;
-}
-
-char* match_commond(char* commondPrefix) {
-    //consputc(strlen(commondPrefix)+'0');
-    int i = 0;
-	int j = 0;
-    int num = 0;
-    num = getCommondList();
+    char* commendList[3];
+    char **p = commendList;
     int flag = 0;
-    char* firstmatch = NULL;
-	//cprintf("%s\n", commondPrefix);
-    while (j != num) {
-        i = 0; 
-		//cprintf("%d %s\n", j, cmdlist[j]);
-        if (strlen(cmdlist[j]) < strlen(commondPrefix)) {j++; continue;}
-        while (i < strlen(commondPrefix)) if (cmdlist[j][i] == commondPrefix[i]) i++; else break;
-        if (i >= strlen(commondPrefix)) {
-			if (flag == 0) firstmatch = cmdlist[j];
-			flag++; 
-            if(flag == tab_times) return cmdlist[j];
- 		}
-        j++;
-        //num--;
+    char* ans = NULL;
+    commendList[0] = "ls\0";
+    commendList[1] = "cd\0";
+    commendList[2] = NULL;
+    while (*p != NULL) {
+        i = 0;
+        if (strlen(*p) < strlen(commendPrefix)) {p++; continue;}
+        while (i < strlen(commendPrefix)) if ((*p)[i] == commendPrefix[i]) i++; else break;
+        if (i >= strlen(commendPrefix)) {if (flag == 1) flag = 0; else {ans = *p; flag = 1;} }
+        p++;
     }
-    //cprintf("%d %d %d\n", flag, tab_times, num);
-    if (flag < tab_times) {tab_times = 1;  return firstmatch;}	else return NULL;
+    if (flag == 1) return ans; else return NULL;	
 }
 
 int firstVim = 1;
@@ -549,13 +506,10 @@ consoleintr(int (*getc)(void))
     release(&input.lock);
     return;	
   }
-  else 
+  else
   {
   acquire(&input.lock);
-  char commondPrefix[INPUT_BUF];
-  int length;
   while((c = getc()) >= 0){
-    if(c != '\t' && c != 0) {tab_times = 0;}
     switch(c){
     case C('P'):  // Process listing.
       his.flag = 0;//history flag
@@ -566,38 +520,20 @@ consoleintr(int (*getc)(void))
       bufferPos = 0;
       his.flag = 0;//history flag
       if (input.e != input.w) {
-      	  tab_times ++;
-          //cprintf("%d %d", tab_times, match_length);
-          if (tab_times == 1) {
-              match_length = 0;
-          } 
-          else {
-              while (match_length != 0) {
-                  if(input.e != input.w){
-                      input.e--;
-                      consputc(BACKSPACE);
-                      if(len > 0) len--;
-	                  concatInput();
-                  }
-                  match_length--;
-              }
-          }
           i = input.e - 1;
           while (input.buf[i % INPUT_BUF] != ' ' && i != input.w) i--;
-          length = 0;
-          while (i != input.e) commondPrefix[length++] = input.buf[i++ % INPUT_BUF];
-          commondPrefix[length++] = '\0';
-          //cprintf("%s %d", commondPrefix, tab_times);
+          char commendPrefix[INPUT_BUF];
+          int length = 0;
+          while (i != input.e) commendPrefix[length++] = input.buf[i++ % INPUT_BUF];
+          commendPrefix[length++] = '\0';
           char* match_ans;
-          match_ans = match_commond(commondPrefix);
+          match_ans = match_commend(commendPrefix);
           if (match_ans != NULL) {
               i = length - 1;
               while (match_ans[i] != '\0') {
                   input.buf[input.e++ % INPUT_BUF] = match_ans[i];
                   str[len++] = match_ans[i];
                   consputc(match_ans[i++]);
-                  match_length++;
-                  //cprintf("%d", match_length);
               }
           } 
       }
@@ -715,21 +651,7 @@ consoleintr(int (*getc)(void))
         if(len > 0) len--;
       }
       break;
-    /*
-    case 0xE5:
-      if (bufferPos > 0)
-      {
-          input.buf[input.e++ % INPUT_BUF] = buffer[bufferPos-1];
-          str[len++] = buffer[bufferPos-1];//Preparation for building a history record
-          consputc(buffer[bufferPos-1]);
-          bufferPos --;
-          concatInput();
-      }
- 
-       
-	
-      break;
-    */
+    
   //
     /*
     default:
