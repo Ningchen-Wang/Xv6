@@ -24,9 +24,6 @@ char cmdlist[100][100];
 int tab_times = 0;
 int match_length = 0;
 
-extern char pathroute[100];
-
-
 struct history
 {
 	char cmds[MAX_HISTORY][MAX_CMD];
