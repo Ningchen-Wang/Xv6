@@ -127,7 +127,7 @@ main(int argc, char *argv[])
   int fd, i;
 
   if(argc <= 1){
-    brainf(0);
+    printf(1, "usage: brainf filename\n");
     exit();
   }
 

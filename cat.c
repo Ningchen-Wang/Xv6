@@ -23,7 +23,7 @@ main(int argc, char *argv[])
   int fd, i;
 
   if(argc <= 1){
-    cat(0);
+    printf(1, "usage: cat filename\n");
     exit();
   }
 
