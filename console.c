@@ -652,6 +652,13 @@ consoleintr(int (*getc)(void))
         concatInput();
       }
       break;
+    case 0xE9:   //Delete
+  	  if (bufferPos > 0)
+	  {
+		bufferPos --;
+		concatInput();
+	  }
+	  break;
     //case 0xE2: Test for up key
 	case 0xE2:
         if (his.recordNum == 0)
