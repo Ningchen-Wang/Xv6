@@ -562,6 +562,7 @@ consoleintr(int (*getc)(void))
     case '\t':
       bufferPos = 0;
       his.flag = 0;//history flag
+      //cprintf("%d %d %d\n", input.r, input.w, input.e);
       if (input.e != input.w) {
       	  tab_times ++;
           //cprintf("%d %d", tab_times, match_length);
@@ -596,7 +597,9 @@ consoleintr(int (*getc)(void))
                   match_length++;
                   //cprintf("%d", match_length);
               }
-          } 
+          }
+          cprintf("%d", bufferPos); 
+          concatInput();
       }
       break;
     case C('U'):  // Kill line.
