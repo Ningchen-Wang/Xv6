@@ -594,7 +594,6 @@ consoleintr(int (*getc)(void))
       procdump();
       break;
     case '\t':
-      bufferPos = 0;
       his.flag = 0;//history flag
       //cprintf("%d %d %d\n", input.r, input.w, input.e);
       if (input.e != input.w) {
@@ -632,7 +631,6 @@ consoleintr(int (*getc)(void))
                   //cprintf("%d", match_length);
               }
           }
-          cprintf("%d", bufferPos); 
           concatInput();
       }
       break;
