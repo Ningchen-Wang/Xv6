@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 	if (result == 0)
 		unlink(argv[1]);
 	else
-		printf(1, "rename failed, you cannot rename a directory.\n");
+		printf(1, "rename failed, check if this file or directory exists.\n");
 	exit();
 }
 
