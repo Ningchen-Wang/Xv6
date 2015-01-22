@@ -175,6 +175,7 @@ UPROGS=\
 	_rename\
 	_cp\
 	_vim\
+	_brainf\
 	
 
 fs.img: mkfs README $(UPROGS)
