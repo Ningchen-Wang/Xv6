@@ -3,7 +3,7 @@
 #include "types.h"
 #include "user.h"
 #include "fcntl.h"
-
+#include "execvim.h"
 // Parsed command representation
 #define EXEC  1
 #define REDIR 2
@@ -15,6 +15,7 @@
 char currentDir[256];
 char parentDir[256];
 int isRootDir = 1;
+char oldContent[2000];
 
 struct cmd {
   int type;
@@ -99,8 +100,13 @@ runcmd(struct cmd *cmd)
 		chdir("/");
 		exit();
 	}
+	
+	int n;
+	while((n = read(fd, oldContent, sizeof(oldContent))) > 0);
+    	//	write(1, oldContent, n);
 	close(fd);
 	chdir("/");
+	ecmd ->argv[3] = oldContent;
     }   
 
     exec(ecmd->argv[0], ecmd->argv);

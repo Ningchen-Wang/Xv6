@@ -335,15 +335,9 @@ int checkVimStart(int pos)
   || crt[pos+5]!= ((' ' & 0xff) |0x0700));
 }
 
-void
-consoleintr(int (*getc)(void))
+int consoleintrForVim(int c)
 {
-  int c;
-  int i;
-  if (execvim == 1)
-  {
-     acquire(&input.lock);
-     while((c = getc()) >= 0){
+	int i;
 	int filePos;
 	if (c != 0)
 	{
@@ -542,7 +536,33 @@ consoleintr(int (*getc)(void))
 	    outb(CRTPORT+1, endPos);
 	    execvim = 0;
 	}
-    }
+  return 0;
+}
+
+void
+consoleintr(int (*getc)(void))
+{
+  int c;
+  int i;
+  if (execvim == 1)
+  {
+     acquire(&input.lock);
+     
+     int j;
+     j = 0;
+     if (firstVim)
+     while (content[j] != '\0' )
+     {
+	if (content[j] != '\n' )
+	  consoleintrForVim((content[j]&0xff) | 0x0700);
+        else
+          consoleintrForVim(content[j]);
+	j++;	
+     } 
+     
+     while((c = getc()) >= 0){
+	consoleintrForVim(c);
+     }
     release(&input.lock);
     return;	
   }
