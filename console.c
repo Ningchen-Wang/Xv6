@@ -268,8 +268,9 @@ int getCommondList() {
     struct inode *ip = namei("/");
     struct dirent de;
     int i = 0;
-    int j = 0;
+    int j = 1;
     char file_path[100];
+    strncpy(cmdlist[0], "cd", DIRSIZ);
     file_path[0] = '/';
     while (1) {
        readi(ip, (char*)&de, sizeof(de)*i, sizeof(de));
