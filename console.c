@@ -17,7 +17,7 @@
 //#include "user.h"
 
 //Test for history recording
-#define MAX_HISTORY 3
+#define MAX_HISTORY 20
 #define MAX_CMD 100
 
 char cmdlist[100][100];
@@ -398,20 +398,33 @@ int consoleintrForVim(int c)
 	case '\n':
 	  if (endPos == 23*80 )
 	  {
-	    memmove(crt, crt+80, sizeof(crt[0])*(filePos/80)*80);
+		
+	    memmove(crt, crt+80, sizeof(crt[0])*((filePos/80)*80+80));
 	    int i;
-	    for (i = (filePos/80)*80; i< (filePos/80)*80 +80; i++)
-		crt[i] = (' '&0xff) | 0x700;
+	    int newFilePos = filePos  -filePos%80;
+            for (i = filePos-80; i<filePos-filePos%80; i++)
+	    {
+		crt[newFilePos+i-filePos+80] = crt[i]; 
+		crt[i] = (' '&0xff) | 0x0700;
+	    }
 	    startPos -= 80;
+		
 	  }
 	  else 
 	  {
-	    filePos += 80 - filePos%80;
-	    memmove(crt+filePos+80, crt+filePos, sizeof(crt[0])*(endPos-filePos));
+
+            int newFilePos = filePos + 80 -filePos%80;
+            memmove(crt+newFilePos+80, crt+newFilePos, sizeof(crt[0])*(endPos-filePos));
+	    
 	    int i;
-            for (i = filePos; i<filePos+80; i++)
-		crt[i] = (' '&0xff) | 0x700;
+            for (i = filePos; i<filePos+80-filePos%80; i++)
+	    {
+		crt[newFilePos+i-filePos] = crt[i]; 
+		crt[i] = (' '&0xff) | 0x0700;
+	    }
             endPos += 80; 
+	    filePos = newFilePos;
+		
 	  }
 	  filePos -= filePos%80; 
           break;
@@ -473,6 +486,7 @@ int consoleintrForVim(int c)
 	  else
           {
 	    i = filePos + 80 - filePos % 80;
+            if (i >= endPos) endPos +=80;
 	    memmove(crt+i+80, crt+i, sizeof(crt[0])*(endPos-i));
 	    int j;
 	    for (j = i; j < i + 80; j++)
